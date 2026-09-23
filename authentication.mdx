@@ -1,0 +1,32 @@
+---
+title: '认证'
+description: '使用 Bearer Token 认证 API 请求'
+---
+
+所有请求都必须在 HTTP Header 中携带 API Key：
+
+```http
+Authorization: Bearer YOUR_API_KEY
+```
+
+同时发送 JSON 请求体时设置：
+
+```http
+Content-Type: application/json
+```
+
+## 推荐的密钥注入方式
+
+```bash
+export TOKENLAB_API_KEY="sk-..."
+```
+
+```powershell
+$env:TOKENLAB_API_KEY = "sk-..."
+```
+
+在应用中读取环境变量，避免把密钥写入 Git、浏览器代码、Docker 镜像层或异常日志。若怀疑密钥泄露，请立即在 TokenLab 控制台撤销并重新创建。
+
+<Warning>
+不要把 API Key 放在 URL 查询参数中，也不要把真实密钥复制到公开 issue、截图或前端 JavaScript 中。
+</Warning>

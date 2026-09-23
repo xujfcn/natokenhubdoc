@@ -1,0 +1,22 @@
+---
+title: '错误处理'
+description: '按 HTTP 状态码定位常见问题'
+---
+
+| 状态码 | 含义 | 处理方式 |
+| --- | --- | --- |
+| `200` | 请求成功 | 读取 `choices`；流式请求继续读取 SSE 直到 `[DONE]` |
+| `400` | 请求格式或参数错误 | 检查 JSON、`model`、`messages` 和类型 |
+| `401` | 未认证或密钥无效 | 检查 `Authorization: Bearer ...` 和密钥是否已撤销 |
+| `403` | 无权限 | 检查账号、Key 权限和模型访问范围 |
+| `404` | 路径错误 | 确认使用 `/v1/chat/completions`，而不是漏掉 `/v1` |
+| `429` | 频率或额度限制 | 降低并发、等待后重试，并检查额度 |
+| `5xx` | 服务端或上游暂时错误 | 记录 `id`（若有），有限次退避重试 |
+
+错误响应通常是 JSON。调试时保留状态码和错误消息，但必须对 Authorization Header、请求体中的敏感内容和完整密钥脱敏。
+
+## 常见配置错误
+
+- 把 `base_url` 写成 `https://na.tokenlab.sh` 后又使用只接受 `/chat/completions` 的 SDK，导致路径不完整。OpenAI SDK 应填写 `https://na.tokenlab.sh/v1`。
+- 使用未在 `/v1/models` 返回的模型名。先查询模型列表，再设置 `model`。
+- 忘记 `Content-Type: application/json`，或把 JSON 当作表单提交。

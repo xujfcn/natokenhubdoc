@@ -1,0 +1,49 @@
+---
+title: 'Chat Completions'
+description: '调用 gpt-6-astra 生成文本'
+---
+
+## `POST /v1/chat/completions`
+
+### 请求头
+
+```http
+Authorization: Bearer YOUR_API_KEY
+Content-Type: application/json
+```
+
+### 请求参数
+
+| 参数 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `model` | string | 是 | 使用 `gpt-6-astra` |
+| `messages` | array | 是 | 按顺序排列的对话消息 |
+| `stream` | boolean | 否 | `true` 返回 SSE，默认非流式 |
+
+### 非流式示例
+
+```bash
+curl https://na.tokenlab.sh/v1/chat/completions \
+  -H "Authorization: Bearer $TOKENLAB_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-6-astra",
+    "messages": [{"role": "user", "content": "用一句话说明量子计算。"}],
+    "stream": false
+  }'
+```
+
+响应遵循 Chat Completions 结构：从 `choices[0].message.content` 读取文本，从 `usage.total_tokens` 读取标准总 token 数。
+
+### 流式示例
+
+把 `stream` 设为 `true` 后，逐行解析 `data: {json}`。将每个 JSON 中的 `choices[0].delta.content` 拼接；`choices` 为空的最后用量事件也必须接受，最终以 `data: [DONE]` 结束。
+
+```text
+data: {"choices":[{"delta":{"content":"你好"}}]}
+data: {"choices":[{"delta":{},"finish_reason":"stop"}]}
+data: {"choices":[],"usage":{"total_tokens":17}}
+data: [DONE]
+```
+
+流式响应也可能包含 `data: {"error": {...}}`。收到该事件时立即停止读取并按错误处理；只有收到 `[DONE]` 才算正常结束。

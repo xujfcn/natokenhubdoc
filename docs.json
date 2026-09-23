@@ -1,0 +1,65 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "TokenLab API 文档",
+  "description": "通过 TokenLab 的 OpenAI 兼容接口调用 gpt-6-astra",
+  "colors": {
+    "primary": "#2563EB",
+    "light": "#60A5FA",
+    "dark": "#1D4ED8"
+  },
+  "api": {
+    "baseUrl": "https://na.tokenlab.sh",
+    "auth": {
+      "method": "bearer"
+    }
+  },
+  "contextual": {
+    "options": ["copy"],
+    "display": "header"
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "开始使用",
+        "groups": [
+          {
+            "group": "快速开始",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "authentication",
+              "api-endpoint",
+              "making-requests"
+            ]
+          },
+          {
+            "group": "参考",
+            "pages": ["error-handling", "verification"]
+          }
+        ]
+      },
+      {
+        "tab": "API 参考",
+        "groups": [
+          {
+            "group": "OpenAI 兼容接口",
+            "pages": [
+              "chat/openai/models",
+              "chat/openai/completions"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "SDK 集成",
+        "groups": [
+          {
+            "group": "官方 OpenAI SDK",
+            "pages": ["sdks/python-openai", "sdks/nodejs-openai"]
+          }
+        ]
+      }
+    ]
+  }
+}

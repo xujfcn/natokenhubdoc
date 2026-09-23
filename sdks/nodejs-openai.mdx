@@ -1,0 +1,44 @@
+---
+title: 'Node.js OpenAI SDK'
+description: '使用官方 openai 包调用 TokenLab'
+---
+
+安装依赖：
+
+```bash
+npm install openai
+```
+
+示例：
+
+```javascript
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.TOKENLAB_API_KEY,
+  baseURL: "https://na.tokenlab.sh/v1",
+  timeout: 120_000,
+});
+
+const completion = await client.chat.completions.create({
+  model: "gpt-6-astra",
+  messages: [{ role: "user", content: "你好" }],
+});
+console.log(completion.choices[0].message.content);
+```
+
+流式调用：
+
+```javascript
+const stream = await client.chat.completions.create({
+  model: "gpt-6-astra",
+  messages: [{ role: "user", content: "逐字输出 stream-ok" }],
+  stream: true,
+});
+
+for await (const chunk of stream) {
+  const text = chunk.choices?.[0]?.delta?.content;
+  if (text) process.stdout.write(text);
+}
+process.stdout.write("\n");
+```

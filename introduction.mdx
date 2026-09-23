@@ -1,0 +1,23 @@
+---
+title: 'TokenLab API'
+description: '使用 OpenAI 兼容接口调用 gpt-6-astra'
+---
+
+TokenLab 提供 OpenAI 兼容的 HTTPS API。只需把 OpenAI SDK 的 `base_url`（或 `baseURL`）改为 TokenLab 地址，并使用 TokenLab API Key，即可调用 `gpt-6-astra`。
+
+## 固定配置
+
+| 配置项 | 值 |
+| --- | --- |
+| API 根地址 | `https://na.tokenlab.sh/v1` |
+| 对话接口 | `POST /chat/completions` |
+| 模型 | `gpt-6-astra` |
+| 认证 | `Authorization: Bearer <API_KEY>` |
+
+<Note>
+文档中的 `YOUR_API_KEY` 只是占位符。请通过环境变量或密钥管理服务注入真实密钥，不要提交到代码仓库、日志或前端代码。
+</Note>
+
+## 兼容范围
+
+本文档覆盖已验证的 `/v1/models` 和 `/v1/chat/completions`。请求体采用 OpenAI Chat Completions 格式，支持普通 JSON 响应和 `stream: true` 的 SSE 响应。

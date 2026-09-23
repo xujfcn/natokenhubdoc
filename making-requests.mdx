@@ -1,0 +1,45 @@
+---
+title: '发出请求'
+description: '请求体、超时、流式输出和重试建议'
+---
+
+## 请求体
+
+最小请求只需要 `model` 和 `messages`：
+
+```json
+{
+  "model": "gpt-6-astra",
+  "messages": [
+    {"role": "system", "content": "你是一个简洁的助手。"},
+    {"role": "user", "content": "解释什么是 SSE。"}
+  ],
+  "stream": false
+}
+```
+
+`messages` 按对话顺序排列，`role` 使用 `system`、`user` 或 `assistant`。生产客户端应设置合理的连接和读取超时（例如 120 秒），并记录响应的 `id` 便于排查。
+
+## 流式输出
+
+设置 `stream: true` 后，响应为 `text/event-stream`：
+
+```bash
+curl https://na.tokenlab.sh/v1/chat/completions \
+  -H "Authorization: Bearer $TOKENLAB_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Accept: text/event-stream" \
+  -d '{
+    "model": "gpt-6-astra",
+    "messages": [{"role": "user", "content": "逐字输出 stream-ok"}],
+    "stream": true
+  }'
+```
+
+每个事件以 `data: ` 开头，事件内容是 JSON。把 `choices[0].delta.content` 依次拼接即可得到文本；收到 `data: [DONE]` 后结束读取。最后一个 JSON 事件可能没有 `choices`，但会携带 `usage`，因此解析器要允许 `choices` 为空。
+
+如果某个上游在生成过程中失败，服务也可能在 SSE 中发送 `data: {"error": ...}`。解析器应先检查 `error`，停止拼接并按错误码处理；不能把 HTTP 200 当作整次流式请求必然成功。
+
+## 重试边界
+
+只对连接超时、网络断开或明确的 5xx 错误做有限次指数退避。对 401、403、400 等客户端错误不要自动重试；先修复密钥、权限或请求体。

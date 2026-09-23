@@ -1,0 +1,30 @@
+---
+title: '列出模型'
+description: '查询当前 API Key 可用的模型'
+---
+
+## `GET /v1/models`
+
+```bash
+curl https://na.tokenlab.sh/v1/models \
+  -H "Authorization: Bearer $TOKENLAB_API_KEY"
+```
+
+返回示例：
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "gpt-6-astra",
+      "object": "model",
+      "owned_by": "openai",
+      "supported_endpoint_types": ["openai"]
+    }
+  ],
+  "success": true
+}
+```
+
+代码不要依赖 `created` 的固定值，也不要假设列表顺序。发起对话前，使用 `data[].id` 与目标模型名比较。

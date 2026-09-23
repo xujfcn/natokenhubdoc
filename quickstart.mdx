@@ -1,0 +1,83 @@
+---
+title: '5 分钟完成第一次调用'
+description: '使用 cURL、Python 或 Node.js 调用 gpt-6-astra'
+---
+
+## 1. 准备 API Key
+
+从 TokenLab 控制台获取 API Key，并在当前终端设置为 `TOKENLAB_API_KEY`。不要把真实密钥直接写进源代码。
+
+## 2. 发送最小请求
+
+<CodeGroup>
+```bash cURL
+curl https://na.tokenlab.sh/v1/chat/completions \
+  -H "Authorization: Bearer $TOKENLAB_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-6-astra",
+    "messages": [
+      {"role": "user", "content": "你好，请用一句话介绍自己。"}
+    ],
+    "stream": false
+  }'
+```
+
+```python Python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["TOKENLAB_API_KEY"],
+    base_url="https://na.tokenlab.sh/v1",
+)
+
+response = client.chat.completions.create(
+    model="gpt-6-astra",
+    messages=[{"role": "user", "content": "你好，请用一句话介绍自己。"}],
+)
+print(response.choices[0].message.content)
+```
+
+```javascript Node.js
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.TOKENLAB_API_KEY,
+  baseURL: "https://na.tokenlab.sh/v1",
+});
+
+const response = await client.chat.completions.create({
+  model: "gpt-6-astra",
+  messages: [{ role: "user", content: "你好，请用一句话介绍自己。" }],
+});
+console.log(response.choices[0].message.content);
+```
+</CodeGroup>
+
+## 3. 判断成功
+
+成功响应的关键字段如下：
+
+```json
+{
+  "object": "chat.completion",
+  "model": "gpt-6-astra",
+  "choices": [
+    {
+      "message": {
+        "role": "assistant",
+        "content": "..."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 12,
+    "completion_tokens": 6,
+    "total_tokens": 18
+  }
+}
+```
+
+`id` 和 `created` 每次请求都会变化，不应写死在业务逻辑中。`usage` 还可能包含服务端扩展字段；客户端只依赖标准 token 字段即可。

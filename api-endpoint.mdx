@@ -1,0 +1,23 @@
+---
+title: 'API Endpoint'
+description: '确认根地址、版本前缀和完整路径'
+---
+
+## 地址组成
+
+| 用途 | 地址 |
+| --- | --- |
+| API 根地址（SDK 的 `base_url`） | `https://na.tokenlab.sh/v1` |
+| 模型列表 | `GET https://na.tokenlab.sh/v1/models` |
+| 对话补全 | `POST https://na.tokenlab.sh/v1/chat/completions` |
+
+SDK 配置使用带 `/v1` 的根地址；如果直接使用 HTTP，请在路径中保留 `/v1`。不要把完整的 `/chat/completions` 再拼到 SDK 的 `base_url` 中。
+
+## 检查可用模型
+
+```bash
+curl https://na.tokenlab.sh/v1/models \
+  -H "Authorization: Bearer $TOKENLAB_API_KEY"
+```
+
+响应是一个 OpenAI 风格的模型列表。已验证的模型包括 `gpt-5.5`、`gpt-5.6-sol` 和 `gpt-6-astra`；实际可用性以当前响应为准。
