@@ -46,7 +46,8 @@
             "group": "OpenAI 兼容接口",
             "pages": [
               "chat/openai/models",
-              "chat/openai/completions"
+              "chat/openai/completions",
+              "chat/responses/create"
             ]
           }
         ]

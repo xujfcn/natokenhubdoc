@@ -30,6 +30,8 @@ print(completion.choices[0].message.content)
 
 流式调用：
 
+以下代码复用上面创建的 `client`，放在同一个 Python 文件中运行。
+
 ```python
 stream = client.chat.completions.create(
     model="gpt-6-astra",

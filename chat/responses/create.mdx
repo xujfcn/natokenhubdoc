@@ -1,0 +1,98 @@
+---
+title: 'Responses API'
+description: '使用 /v1/responses 调用 gpt-6-astra，包含普通响应与 SSE 事件'
+---
+
+## `POST /v1/responses`
+
+完整地址为 `https://na.tokenlab.sh/v1/responses`。路径末尾是复数 `responses`，不是 `reponse` 或 `response`。
+
+## 与 Chat Completions 的区别
+
+| 项目 | Chat Completions | Responses |
+| --- | --- | --- |
+| 请求路径 | `/v1/chat/completions` | `/v1/responses` |
+| 本文示例输入 | `messages` 消息数组 | `input` 字符串 |
+| 普通响应文本 | `choices[0].message.content` | 遍历 `output` 中 message 的 `content`，读取 `type=output_text` 的 `text` |
+| 流式文本增量 | `choices[].delta.content` | `response.output_text.delta` 事件的 `delta` |
+| 流式完成标志 | `[DONE]` | `response.completed` |
+| 用量字段 | `prompt_tokens`、`completion_tokens` | `input_tokens`、`output_tokens` |
+
+## 普通请求
+
+以下 Bash cURL 请求体已用真实 HTTP 请求验证：
+
+```bash
+curl --fail-with-body --max-time 120 https://na.tokenlab.sh/v1/responses \
+  -H "Authorization: Bearer $TOKENLAB_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-6-astra",
+    "input": "请只回复 responses-ok",
+    "stream": false,
+    "max_output_tokens": 64
+  }'
+```
+
+| 参数 | 类型 | 说明 |
+| --- | --- | --- |
+| `model` | string | 必填，`gpt-6-astra` |
+| `input` | string | 本页已验证的文本输入形式 |
+| `stream` | boolean | 本页显式设为 `false` 或 `true` |
+| `max_output_tokens` | integer | 本页使用 64；短测试上限不适用于所有业务任务 |
+
+实际返回的关键字段（省略响应 ID、时间及扩展字段）：
+
+```json
+{
+  "object": "response",
+  "status": "completed",
+  "error": null,
+  "model": "gpt-6-astra",
+  "output": [
+    {
+      "type": "message",
+      "role": "assistant",
+      "content": [{"type": "output_text", "text": "responses-ok"}]
+    }
+  ],
+  "usage": {"input_tokens": 11, "output_tokens": 6, "total_tokens": 17}
+}
+```
+
+不要假设 `output` 的第一项一定是文本消息；按 `type` 筛选。原始 HTTP 响应应读取 `output` 数组，不能依赖 SDK 提供的 `output_text` 便捷属性。token 数随输入和输出变化。
+
+## 流式请求
+
+```bash
+curl --no-buffer --fail-with-body --max-time 120 https://na.tokenlab.sh/v1/responses \
+  -H "Authorization: Bearer $TOKENLAB_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Accept: text/event-stream" \
+  -d '{
+    "model": "gpt-6-astra",
+    "input": "请只回复 responses-ok",
+    "stream": true,
+    "max_output_tokens": 64
+  }'
+```
+
+实测事件顺序包含 `response.created`、`response.output_text.delta`、`response.output_text.done` 和 `response.completed`，期间还有内容项生命周期事件。每个 SSE 事件用空行分隔，`data` JSON 的 `type` 表示事件类型：
+
+```text
+event: response.output_text.delta
+data: {"type":"response.output_text.delta","delta":"responses"}
+
+event: response.output_text.delta
+data: {"type":"response.output_text.delta","delta":"-ok"}
+```
+
+上面仅展示文本事件的关键字段。拼接 `delta` 得到正文；收到 `response.completed` 后检查其中 `response.status` 为 `completed`、`response.error` 为空，并从 `response.usage` 读取用量。本次实测没有 `[DONE]`，不要等待该标志。
+
+客户端还应处理 `error`、`response.failed`、`response.incomplete` 以及连接提前关闭；这些都不能视为成功。HTTP 200 只表示流已建立。输出已经展示给用户后，自动重试可能导致重复内容或重复计费。
+
+## 验证范围
+
+已验证字符串输入、普通文本输出、64 token 上限及流式文本事件。工具调用、图片输入、`previous_response_id`、响应查询和删除没有在本次验证中测试；返回了相关字段不代表这些能力已经验证。
+
+设置 `TOKENLAB_API_KEY` 后，可在仓库根目录运行 `python scripts/verify_responses.py` 复测本页两种请求。详见 [验证记录](/verification)。

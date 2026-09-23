@@ -3,13 +3,23 @@ title: '验证记录'
 description: '文档示例的实际接口验证结果'
 ---
 
-本文档在 2026-09-23（Asia/Shanghai）使用独立环境变量中的 API Key 对生产地址执行了三项验证，密钥未写入仓库：
+本文档在 2026-09-23（Asia/Shanghai）使用授权 API Key 对生产地址执行了以下真实 HTTP 验证，密钥未写入仓库。复测脚本从环境变量读取密钥：
 
 | 验证项 | 请求 | 结果 |
 | --- | --- | --- |
 | 模型发现 | `GET https://na.tokenlab.sh/v1/models` | HTTP 200；列表包含 `gpt-6-astra` |
 | 非流式对话 | `POST /v1/chat/completions`，`stream: false` | HTTP 200；`object=chat.completion`，模型为 `gpt-6-astra`，返回 `choices` 和标准 `usage` |
 | 流式对话 | `POST /v1/chat/completions`，`stream: true` | HTTP 200；收到 `data:` JSON 事件，最后收到 `[DONE]`；末尾事件可携带 `usage` |
+| Responses 普通请求 | `POST /v1/responses`，字符串 `input`，`stream: false` | HTTP 200；`status=completed`，正文 `responses-ok`，用量为 11 输入 / 6 输出 / 17 总 token |
+| Responses 流式请求 | `POST /v1/responses`，`stream: true` | HTTP 200；文本增量拼接为 `responses-ok`，收到 `response.completed`；不依赖 `[DONE]` |
+
+Responses 首次实测的响应 ID：普通请求 `resp_0822ad302cee6056006ab33d0554a08196b196d3a28782c491`；流式请求 `resp_09a7b876e4aba6f4006ab33d163d8481939b4860e582d0251d`。
+
+Chat Completions 测试期间也遇到 HTTP 500 `get_channel_failed`，以及 HTTP 200 后 SSE 内的 `rate_limit_exceeded`。后续重试成功；这些结果不能作为服务始终稳定的保证。
+
+## 未验证的范围
+
+工具调用、多模态、长上下文、历史响应续接、各类错误状态码均未全面测试。错误处理页中的通用排查建议不代表每个状态码都已触发验证。
 
 ## 可重复验证
 
@@ -18,5 +28,22 @@ description: '文档示例的实际接口验证结果'
 ```bash
 TOKENLAB_API_KEY=sk-... python3 scripts/verify_api.py
 ```
+
+同一环境变量下运行 `python3 scripts/verify_responses.py`，验证 Responses 普通与流式请求。它会校验实际文本、状态、用量及流式完成事件；失败时返回非零退出码，不自动重试。
+
+Responses 复测脚本已实际返回两项 `PASS`：普通响应 ID 为 `resp_0fc44f2ab221d386006ab33dc5fdd081938c3fa5b7a00ee626`，流式响应 ID 为 `resp_01e758de9f8258f7006ab33dd1e2c481978638109aebfd2644`。两次正文均为 `responses-ok`，用量均为 11 输入 / 6 输出 / 17 总 token。
+
+## SDK 示例验证
+
+`scripts/verify_sdk_examples.py` 直接读取 Python 和 Node.js SDK 文档页的代码块，在同一个进程内顺序执行普通与流式代码，并检查两段均产生非空文本。该验证覆盖这些 SDK 页的 Chat Completions 示例。
+
+测试环境为 Python 3.10 / `openai==2.35.1` 和 Node.js 22.22.3 / `openai@7.22.0`。首次 Python SDK 连接受本地终端代理影响，TLS 握手失败；对 `na.tokenlab.sh` 直连后普通与流式均通过。测试没有关闭 TLS 证书验证。
+
+| SDK 页 | 普通输出 | 流式输出 | 结果 |
+| --- | --- | --- | --- |
+| Python | 非空，14 字符 | 非空，9 字符 | `PASS` |
+| Node.js | 非空，14 字符 | 非空，9 字符 | `PASS` |
+
+Node.js 首次流式请求触发 `rate_limit_exceeded`，SDK 正确抛出 `APIError`；使用 `--sdk node` 单独复测后两段通过。脚本自身不自动重试整轮示例，SDK 保留默认 HTTP 重试行为。
 
 脚本只输出脱敏后的状态和断言结果。如果服务端模型列表或响应协议发生变化，应先重新运行脚本，再更新本文档。

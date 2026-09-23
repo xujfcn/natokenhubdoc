@@ -5,7 +5,7 @@ description: '按 HTTP 状态码定位常见问题'
 
 | 状态码 | 含义 | 处理方式 |
 | --- | --- | --- |
-| `200` | 请求成功 | 读取 `choices`；流式请求继续读取 SSE 直到 `[DONE]` |
+| `200` | HTTP 请求成功 | Chat Completions 检查 `choices`，流式检查错误及 `[DONE]`；Responses 检查 `status`，流式检查 `response.completed` |
 | `400` | 请求格式或参数错误 | 检查 JSON、`model`、`messages` 和类型 |
 | `401` | 未认证或密钥无效 | 检查 `Authorization: Bearer ...` 和密钥是否已撤销 |
 | `403` | 无权限 | 检查账号、Key 权限和模型访问范围 |

@@ -1,0 +1,11 @@
+{
+  "name": "natokenhubdoc",
+  "private": true,
+  "description": "Dependencies for verifying the documented Node.js SDK examples",
+  "scripts": {
+    "verify:sdk": "python scripts/verify_sdk_examples.py"
+  },
+  "devDependencies": {
+    "openai": "7.22.0"
+  }
+}
